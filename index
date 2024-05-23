@@ -1,3 +1,4 @@
+# Create the main window
 app = customtkinter.CTk()
 app.title("Aliexpress Crawler")
 app.geometry("600x400")
@@ -56,7 +57,11 @@ def crawl_product(url):
     global list_ck
     try:
         cookie = get_ck()
-        b = requests.get(url, cookies=cookie)
+        p = {
+            "http":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80",
+            "https":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80"
+        }
+        b = requests.get(url, cookies=cookie, proxies=p)
         list_img = (extract_between(b.text, '"skuPropertyImagePath":"','"'))
         list_id = (extract_between(b.text, '"propertyValueId":',','))
 
