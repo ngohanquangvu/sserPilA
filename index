@@ -207,7 +207,6 @@ def crawl_product(url):
         try:
             list_ck.remove(cookie)
         except: pass
-        crawl_product(url)
 
 
 
