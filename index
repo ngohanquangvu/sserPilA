@@ -1,12 +1,6 @@
-# Create the main window
 app = customtkinter.CTk()
 app.title("Aliexpress Crawler")
 app.geometry("600x400")
-
-file_path = 'result.xlsx'
-if not os.path.exists(file_path):
-    wb = Workbook()
-    wb.save(file_path)
 
 def get_des(url):
     html = requests.get(url).text
@@ -16,22 +10,6 @@ def get_des(url):
     img_tags = soup.find_all('img')
     img_srcs = [tag.get('src') for tag in img_tags]
     return p_texts, img_srcs
-
-wb = openpyxl.load_workbook(file_path)
-ws = wb.active
-fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
-font = Font(color="FF0000")
-row_values = [
-    ['TemplateType=fptcustom', 'Version=2021.0709', 'TemplateSignature=TVVMVElUT09M', 'settings=contentLanguageTag=en_US&feedType=610841&headerLanguageTag=en_US&primaryMarketplaceId=amzn1.mp.o.ATVPDKIKX0DER&templateIdentifier=c8bf49ba-63dc-4a50-9056-059404a3a2aa&timestamp=2021-07-09T17%3A36%3A18.873Z', 'Use ENGLISH to fill this template.The top 3 rows are for Amazon.com use only. Do not modify or delete the top 3 rows.', 'a1', 'a0', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'Images', 'a9', 'a10', 'a11', 'a12', 'a13', 'Variation', 'a14', 'a15', 'a16', 'Basic', 'a17', 'a18', 'Discovery', 'a19', 'a20', 'a21', 'a22', 'a23', 'a24', 'a25', 'a26', 'a27', 'a28', 'a29', 'a30', 'a31', 'a32', 'a33', 'a34'],
-    ['Product Type', 'Item Type Keyword', 'Brand Name', 'Manufacturer', 'Product ID', 'Product ID Type', 'Order Ali', 'Link SP', 'Key Product Features', 'Seller SKU', 'Product Name', 'Standard Price', 'Quantity', 'Main Image URL', 'Other Image URL', 'Other Image URL', 'Other Image URL', 'Other Image URL', 'Other Image URL', 'Other Image URL', 'Parentage', 'Parent SKU', 'Relationship Type', 'Variation Theme', 'Update Delete', 'Manufacturer Part Number', 'Product Description', 'Catalog Number', 'Key Product Features', 'Key Product Features', 'Key Product Features', 'Key Product Features', 'Search Terms', 'Color', 'Color Map', 'Unit Count', 'Unit Count Type', 'Size', 'Size Map', 'Handling Time', 'Intended Use', 'Target Audience', 'Other Attributes', 'Subject Matter'],
-    ['feed_product_type', 'item_type', 'brand_name', 'manufacturer', 'external_product_id', 'external_product_id_type', '', '', 'bullet_point1', 'item_sku', 'item_name', 'standard_price', 'quantity', 'main_image_url', 'other_image_url1', 'other_image_url2', 'other_image_url3', 'other_image_url4', 'other_image_url5', 'other_image_url6', 'parent_child', 'parent_sku', 'relationship_type', 'variation_theme', 'update_delete', 'part_number', 'product_description', 'catalog_number', 'bullet_point2', 'bullet_point3', 'bullet_point4', 'bullet_point5', 'generic_keywords', 'color_name', 'color_map', 'unit_count', 'unit Count Type', 'size_name', 'size Map', 'fulfillment_latency', 'specific_uses_keywords1', 'target_audience_keywords1', 'thesaurus_attribute_keywords', 'thesaurus_subject_keywords1']
-]
-for row_index, row in enumerate(row_values, start=1):
-    for col_index, value in enumerate(row, start=1):
-        cell = ws.cell(row=row_index, column=col_index, value=value)
-        cell.fill = fill
-        cell.font = font
-wb.save("result.xlsx")
 
 def extract_between(text, sub1, sub2):
     """Return a list of all values between two substrings in a string."""
@@ -54,7 +32,9 @@ def get_ck():
         return random.choice(list_ck)
 
 def crawl_product(url):
-    global list_ck
+    global list_ck, file_path_result, font
+    wb = openpyxl.load_workbook(file_path_result)
+    ws = wb.active
     try:
         cookie = get_ck()
         p = {
@@ -67,9 +47,6 @@ def crawl_product(url):
             log_frame.insert("end", f"Error: {url} không hợp lệ\n")
             log_frame.configure(state="disabled")
             return
-        list_img = (extract_between(b.text, '"skuPropertyImagePath":"','"'))
-        list_id = (extract_between(b.text, '"propertyValueId":',','))
-
         des, imge_url = get_des(b.text.split('"descriptionUrl":"')[1].split('"')[0])
         name = b.text.split('"subject":"')[1].split('"')[0]
         next_row = ws.max_row + 1
@@ -101,12 +78,40 @@ def crawl_product(url):
         ws['AK' + str(next_row)].font = font
         ws['AN' + str(next_row)] = "10"
         ws['AN' + str(next_row)].font = font
-        wb.save('result.xlsx')
+        wb.save(file_path_result)
 
         def extract_last_before_sub2(text, sub1, sub2):
             return text.split(sub2)[0].split(sub1)[-1]
+        if 'propertyValueId' not in b.text:
+            next_row = ws.max_row + 1
+            ws['A' + str(next_row)] = prefix_input.get()
+            ws['B' + str(next_row)] = prefix_input.get()
+            ws['C' + str(next_row)] = prefix_input.get()
+            ws['D' + str(next_row)] = prefix_input.get()
+            ws['K' + str(next_row)] = name
+            ws['AA' + str(next_row)] = des
+            ws['H' + str(next_row)] = url
+            ws['M' + str(next_row)] = 50
+            ws['U' + str(next_row)] = "Child"
+            ws['W' + str(next_row)] = "Variation"
+            ws['X' + str(next_row)] = "Color"
+            ws['AJ' + str(next_row)] = "1"
+            ws['AK' + str(next_row)] = "Count"
+            ws['AN' + str(next_row)] = "10"
+            ws['J' + str(next_row)] = f"{prefix_input.get()}-1-{url.split('/')[-1].split('.html')[0]}"
+            ws['V' + str(next_row)] = f"{prefix_input.get()}-{url.split('/')[-1].split('.html')[0]}"
+            a = b.text.split(f'"imagePathList":["')[1].split(',"')[0]
+            ws['N' + str(next_row)] = a
+            price = "9.99$"
+            ws['L' + str(next_row)] = str(price)
+            ws['AI' + str(next_row)] = f"Color - 1"
+            ws['AH' + str(next_row)] = f"Color - 1"
+            wb.save(file_path_result)
+            return
         list_size = []
         list_id_size = []
+        list_img = (extract_between(b.text, '"skuPropertyImagePath":"','"'))
+        list_id = (extract_between(b.text, '"propertyValueId":',','))
         for i in list_id:
             try:
                 a = b.text.split(f'"propertyValueIdLong":{i},"propertyValueDisplayName":"')[1].split('"')[0]
@@ -147,18 +152,13 @@ def crawl_product(url):
                         except: break    
                     a = b.text.split(f'"propertyValueId":{i},"skuPropertyImagePath":"')[1].split('"')[0]
                     ws['N' + str(next_row)] = a
-                    price = extract_last_before_sub2(b.text, '"skuAmountLocal":"', ',"skuPropIds":"'+i+'"')
-                    if '"value":' in price:
-                        price = price.split('"formatedAmount":"')[1].split('"')[0]
-                    else:
-                        price = price.split('|')[0]
-                    price = math.ceil(float(str(price).replace('$', '').replace("\n",''))*2/0.85)-0.01
+                    price = "9.99$"
                     ws['L' + str(next_row)] = str(price)
                     color = b.text.split(f'"propertyValueId":{i}')[0].split('"skuPropertyTips":"')[-1].split('",')[0]
                     ws['AI' + str(next_row)] = f"{color} - {dem_sku}"
                     ws['AH' + str(next_row)] = f"{color} - {dem_sku}"
                     dem_sku += 1
-                    wb.save('result.xlsx')
+                    wb.save(file_path_result)
                 else:
                     if (i in list_id_size) == False:
                         print(i)
@@ -189,28 +189,44 @@ def crawl_product(url):
                                 except: break    
                             a = b.text.split(f'"propertyValueId":{i},"skuPropertyImagePath":"')[1].split('"')[0]
                             ws['N' + str(next_row)] = a
-                            price = extract_last_before_sub2(b.text, '"skuAmountLocal":"', ',"skuPropIds":"'+i)
-                            if '"value":' in price:
-                                price = price.split('"formatedAmount":"')[1].split('"')[0]
-                            else:
-                                price = price.split('|')[0]
-                            price = math.ceil(float(str(price).replace('$', '').replace("\n",''))*2/0.85)-0.01
-                            ws['L' + str(next_row)] = str(price)
+                            ws['L' + str(next_row)] = '9.99$'
                             color = b.text.split(f'"propertyValueId":{i}')[0].split('"skuPropertyTips":"')[-1].split('",')[0]
                             ws['AI' + str(next_row)] = f"{color} - {j} - {dem_sku}"
                             ws['AH' + str(next_row)] = f"{color} - {j} - {dem_sku}"
                             dem_sku += 1
-                            wb.save('result.xlsx')
+                            wb.save(file_path_result)
     except Exception as e:
         traceback.print_exc()
         print(str(e))
         try:
             list_ck.remove(cookie)
         except: pass
+        crawl_product(url)
 
 
 
 def start():
+    global file_path_result, font, fill
+    file_path_result = f'{prefix_input.get()}-{datetime.datetime.now().strftime("%H-%M-%S-%d-%m-%Y")}.xlsx'
+    if not os.path.exists(file_path_result):
+        wb = Workbook()
+        wb.save(file_path_result)
+    wb = openpyxl.load_workbook(file_path_result)
+    ws = wb.active
+    fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+    font = Font(color="FF0000")
+    row_values = [
+        ['TemplateType=fptcustom', 'Version=2021.0709', 'TemplateSignature=TVVMVElUT09M', 'settings=contentLanguageTag=en_US&feedType=610841&headerLanguageTag=en_US&primaryMarketplaceId=amzn1.mp.o.ATVPDKIKX0DER&templateIdentifier=c8bf49ba-63dc-4a50-9056-059404a3a2aa&timestamp=2021-07-09T17%3A36%3A18.873Z', 'Use ENGLISH to fill this template.The top 3 rows are for Amazon.com use only. Do not modify or delete the top 3 rows.', 'a1', 'a0', 'a2', 'a3', 'a4', 'a5', 'a6', 'a7', 'a8', 'Images', 'a9', 'a10', 'a11', 'a12', 'a13', 'Variation', 'a14', 'a15', 'a16', 'Basic', 'a17', 'a18', 'Discovery', 'a19', 'a20', 'a21', 'a22', 'a23', 'a24', 'a25', 'a26', 'a27', 'a28', 'a29', 'a30', 'a31', 'a32', 'a33', 'a34'],
+        ['Product Type', 'Item Type Keyword', 'Brand Name', 'Manufacturer', 'Product ID', 'Product ID Type', 'Order Ali', 'Link SP', 'Key Product Features', 'Seller SKU', 'Product Name', 'Standard Price', 'Quantity', 'Main Image URL', 'Other Image URL', 'Other Image URL', 'Other Image URL', 'Other Image URL', 'Other Image URL', 'Other Image URL', 'Parentage', 'Parent SKU', 'Relationship Type', 'Variation Theme', 'Update Delete', 'Manufacturer Part Number', 'Product Description', 'Catalog Number', 'Key Product Features', 'Key Product Features', 'Key Product Features', 'Key Product Features', 'Search Terms', 'Color', 'Color Map', 'Unit Count', 'Unit Count Type', 'Size', 'Size Map', 'Handling Time', 'Intended Use', 'Target Audience', 'Other Attributes', 'Subject Matter'],
+        ['feed_product_type', 'item_type', 'brand_name', 'manufacturer', 'external_product_id', 'external_product_id_type', '', '', 'bullet_point1', 'item_sku', 'item_name', 'standard_price', 'quantity', 'main_image_url', 'other_image_url1', 'other_image_url2', 'other_image_url3', 'other_image_url4', 'other_image_url5', 'other_image_url6', 'parent_child', 'parent_sku', 'relationship_type', 'variation_theme', 'update_delete', 'part_number', 'product_description', 'catalog_number', 'bullet_point2', 'bullet_point3', 'bullet_point4', 'bullet_point5', 'generic_keywords', 'color_name', 'color_map', 'unit_count', 'unit Count Type', 'size_name', 'size Map', 'fulfillment_latency', 'specific_uses_keywords1', 'target_audience_keywords1', 'thesaurus_attribute_keywords', 'thesaurus_subject_keywords1']
+    ]
+    for row_index, row in enumerate(row_values, start=1):
+        for col_index, value in enumerate(row, start=1):
+            cell = ws.cell(row=row_index, column=col_index, value=value)
+            cell.fill = fill
+            cell.font = font
+    wb.save(file_path_result)
+
     def run():
         list_url = url_input.get("1.0", "end").split("\n")
         for url in list_url:
