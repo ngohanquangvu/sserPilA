@@ -1,3 +1,4 @@
+# Create the main window
 app = customtkinter.CTk()
 app.title("Aliexpress Crawler")
 app.geometry("600x400")
@@ -33,7 +34,6 @@ def get_ck():
 
 def crawl_product(url):
     global list_ck, file_path_result, font
-    url = url.replace("www.aliexpress.us", "vi.aliexpress.com")
     print(url)
     wb = openpyxl.load_workbook(file_path_result)
     ws = wb.active
@@ -45,11 +45,12 @@ def crawl_product(url):
                 "https":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80"
             }
             b = requests.get(url, cookies=cookie, proxies=p)
-            if b.url.split("?")[0] != url:
-                url = b.url
+            if b.url.split("?")[0] != url.split("?")[0]:
+                url = b.url.split("?")[0]
                 continue
             else:
                 break
+        print(url)
         if ('"bigBossBanTip":"Sorry, the page you requested can not be found:("' in b.text):
             log_frame.configure(state="normal")
             log_frame.insert("end", f"Error: {url} không hợp lệ\n")
