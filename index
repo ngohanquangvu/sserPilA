@@ -21,9 +21,9 @@ def get_ck():
     if len(list_ck) == 0:
         while True:
             try:
-                a = requests.get("https://www.aliexpress.us/")
+                a = requests.get("https://vi.aliexpress.com/")
                 cookie = a.cookies.get_dict()
-                cookie["aep_usuc_f"] = 'site=usa&c_tp=USD&region=US&b_locale=en_US'
+                cookie["aep_usuc_f"] = 'site=vnm&c_tp=VND&region=VN&b_locale=en_US'
                 list_ck.append(cookie)
                 break
             except:pass
@@ -33,15 +33,23 @@ def get_ck():
 
 def crawl_product(url):
     global list_ck, file_path_result, font
+    url = url.replace("www.aliexpress.us", "vi.aliexpress.com")
+    print(url)
     wb = openpyxl.load_workbook(file_path_result)
     ws = wb.active
     try:
         cookie = get_ck()
-        p = {
-            "http":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80",
-            "https":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80"
-        }
-        b = requests.get(url, cookies=cookie, proxies=p)
+        while True:
+            p = {
+                "http":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80",
+                "https":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80"
+            }
+            b = requests.get(url, cookies=cookie, proxies=p)
+            if b.url.split("?")[0] != url:
+                url = b.url
+                continue
+            else:
+                break
         if ('"bigBossBanTip":"Sorry, the page you requested can not be found:("' in b.text):
             log_frame.configure(state="normal")
             log_frame.insert("end", f"Error: {url} không hợp lệ\n")
