@@ -34,7 +34,6 @@ def get_ck():
 
 def crawl_product(url):
     global list_ck, file_path_result, font
-    print(url)
     wb = openpyxl.load_workbook(file_path_result)
     ws = wb.active
     try:
@@ -47,6 +46,9 @@ def crawl_product(url):
             b = requests.get(url, cookies=cookie, proxies=p)
             if b.url.split("?")[0] != url.split("?")[0]:
                 url = b.url.split("?")[0]
+                log_frame.configure(state="normal")
+                log_frame.insert("end", f"Url chưa hợp lệ, đang chuyển hướng tới {url}, vui lòng đợi\n")
+                log_frame.configure(state="disabled")
                 continue
             else:
                 break
