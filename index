@@ -1,4 +1,3 @@
-# Create the main window
 app = customtkinter.CTk()
 app.title("Aliexpress Crawler")
 app.geometry("600x400")
@@ -39,27 +38,44 @@ def crawl_product(url):
     try:
         cookie = get_ck()
         while True:
-            p = {
-                "http":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80",
-                "https":"http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80"
-            }
-            b = requests.get(url, cookies=cookie, proxies=p)
-            if b.url.split("?")[0] != url.split("?")[0]:
-                url = b.url.split("?")[0]
-                log_frame.configure(state="normal")
-                log_frame.insert("end", f"Url chưa hợp lệ, đang chuyển hướng tới {url}, vui lòng đợi\n")
-                log_frame.configure(state="disabled")
-                continue
-            else:
+            try:
+                p = {
+                    "http":"http://0JeLKc:G69qYC@hub-us-8.litport.net:31682",
+                    "https":"http://0JeLKc:G69qYC@hub-us-8.litport.net:31682"
+                }
+                b = requests.get(url, cookies=cookie, proxies=p)
+                if b.url.split("?")[0] != url.split("?")[0]:
+                    url = b.url.split("?")[0]
+                    log_frame.configure(state="normal")
+                    log_frame.insert("end", f"Url chưa hợp lệ, đang chuyển hướng tới {url}, vui lòng đợi\n")
+                    log_frame.configure(state="disabled")
+                    while True:
+                        try:
+                            p = {
+                            "http":"http://0JeLKc:G69qYC@hub-us-8.litport.net:31682",
+                            "https":"http://0JeLKc:G69qYC@hub-us-8.litport.net:31682"
+                            }
+                            b = requests.get(url, cookies=cookie, proxies=p)
+                            break
+                        except: pass
                 break
+            except Exception as e:
+                print(str(e))
+                pass
         print(url)
         if ('"bigBossBanTip":"Sorry, the page you requested can not be found:("' in b.text):
             log_frame.configure(state="normal")
             log_frame.insert("end", f"Error: {url} không hợp lệ\n")
             log_frame.configure(state="disabled")
             return
-        des, imge_url = get_des(b.text.split('"descriptionUrl":"')[1].split('"')[0])
-        name = b.text.split('"subject":"')[1].split('"')[0]
+        if 'descriptionUrl' not in b.text:
+            des = ''
+        else:
+            des, imge_url = get_des(b.text.split('"descriptionUrl":"')[1].split('"')[0])
+        if 'subject' not in b.text:
+            name = b.text.split('<meta property="og:title" content="')[1].split('"')[0].split(' - ')[0]
+        else:
+            name = b.text.split('"subject":"')[1].split('"')[0]
         next_row = ws.max_row + 1
         ws['A' + str(next_row)] = prefix_input.get()
         ws['A' + str(next_row)].font = font
