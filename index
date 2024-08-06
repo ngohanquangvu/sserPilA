@@ -12,70 +12,58 @@ def get_des(url):
     return p_texts, img_srcs
 
 def extract_between(text, sub1, sub2):
-    """Return a list of all values between two substrings in a string."""
     return [t.split(sub2)[0] for t in text.split(sub1)[1:]]
 
-list_ck = []
-def get_ck():
-    global list_ck
-    if len(list_ck) == 0:
-        while True:
-            try:
-                a = requests.get("https://vi.aliexpress.com/")
-                cookie = a.cookies.get_dict()
-                cookie["aep_usuc_f"] = 'site=vnm&c_tp=VND&region=VN&b_locale=en_US'
-                list_ck.append(cookie)
-                break
-            except:pass
-        return cookie
-    else:
-        return random.choice(list_ck)
+logging.getLogger('seleniumwire').setLevel(logging.CRITICAL)
+logging.getLogger('selenium').setLevel(logging.CRITICAL)
+
+def get_detail(url):
+
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument('--log-level=3')
+    chrome_options.add_argument('--disable-logging')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--no-sandbox')
+    options = {
+        'proxy': {
+            'http': 'http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80',
+            'https': 'http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80',
+            'no_proxy': 'localhost,127.0.0.1'
+        }
+    }
+
+    driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=chrome_options, seleniumwire_options=options)
+    driver.get(url)
+    for request in driver.requests:
+        if "/h5/mtop.aliexpress.pdp.pc.query/1.0/" in request.url:
+            if request.response:
+                response_body = request.response.body
+                if request.response.headers.get('Content-Encoding') == 'gzip':
+                    buf = BytesIO(response_body)
+                    f = gzip.GzipFile(fileobj=buf)
+                    response_body = f.read().decode('utf-8')
+                else:
+                    response_body = response_body.decode('utf-8')
+                if '"ret":["SUCCESS' in response_body:
+                    driver.quit()
+                    return response_body
+    driver.quit()
+    return None
 
 def crawl_product(url):
     global list_ck, file_path_result, font
     wb = openpyxl.load_workbook(file_path_result)
     ws = wb.active
     try:
-        cookie = get_ck()
+        detail = get_detail(url)
         while True:
             try:
-                p = {
-                    "http":"http://0JeLKc:G69qYC@hub-us-8.litport.net:31682",
-                    "https":"http://0JeLKc:G69qYC@hub-us-8.litport.net:31682"
-                }
-                b = requests.get(url, cookies=cookie, proxies=p)
-                if b.url.split("?")[0] != url.split("?")[0]:
-                    url = b.url.split("?")[0]
-                    log_frame.configure(state="normal")
-                    log_frame.insert("end", f"Url chưa hợp lệ, đang chuyển hướng tới {url}, vui lòng đợi\n")
-                    log_frame.configure(state="disabled")
-                    while True:
-                        try:
-                            p = {
-                            "http":"http://0JeLKc:G69qYC@hub-us-8.litport.net:31682",
-                            "https":"http://0JeLKc:G69qYC@hub-us-8.litport.net:31682"
-                            }
-                            b = requests.get(url, cookies=cookie, proxies=p)
-                            break
-                        except: pass
+                des = get_des(detail.split('pcDescUrl":"')[1].split('"')[0])[0]
+                name = detail.split('"subject":"')[1].split('"')[0]
                 break
             except Exception as e:
-                print(str(e))
                 pass
-        print(url)
-        if ('"bigBossBanTip":"Sorry, the page you requested can not be found:("' in b.text):
-            log_frame.configure(state="normal")
-            log_frame.insert("end", f"Error: {url} không hợp lệ\n")
-            log_frame.configure(state="disabled")
-            return
-        if 'descriptionUrl' not in b.text:
-            des = ''
-        else:
-            des, imge_url = get_des(b.text.split('"descriptionUrl":"')[1].split('"')[0])
-        if 'subject' not in b.text:
-            name = b.text.split('<meta property="og:title" content="')[1].split('"')[0].split(' - ')[0]
-        else:
-            name = b.text.split('"subject":"')[1].split('"')[0]
         next_row = ws.max_row + 1
         ws['A' + str(next_row)] = prefix_input.get()
         ws['A' + str(next_row)].font = font
@@ -109,7 +97,8 @@ def crawl_product(url):
 
         def extract_last_before_sub2(text, sub1, sub2):
             return text.split(sub2)[0].split(sub1)[-1]
-        if 'propertyValueId' not in b.text:
+        print(detail.count('"skuPropertyValues":'))
+        if detail.count('"skuPropertyValues":')==0:
             next_row = ws.max_row + 1
             ws['A' + str(next_row)] = prefix_input.get()
             ws['B' + str(next_row)] = prefix_input.get()
@@ -127,32 +116,69 @@ def crawl_product(url):
             ws['AN' + str(next_row)] = "10"
             ws['J' + str(next_row)] = f"{prefix_input.get()}-1-{url.split('/')[-1].split('.html')[0]}"
             ws['V' + str(next_row)] = f"{prefix_input.get()}-{url.split('/')[-1].split('.html')[0]}"
-            a = b.text.split(f'"imagePathList":["')[1].split(',"')[0]
-            ws['N' + str(next_row)] = a
-            price = "9.99$"
+            a = [i.replace('"','') for i in detail.split(f'"imagePathList":[')[1].split(']')[0].split(",")]
+            ws['N' + str(next_row)] = a[0]
+            img_url_index = 0
+            for j in ["O", "P", "Q", "R", "S", "T"]:
+                try:
+                    ws[j + str(next_row)] = a[img_url_index]
+                    img_url_index += 1
+                except: break
+            price = "9.99"
             ws['L' + str(next_row)] = str(price)
             ws['AI' + str(next_row)] = f"Color - 1"
             ws['AH' + str(next_row)] = f"Color - 1"
             wb.save(file_path_result)
             return
-        list_size = []
-        list_id_size = []
-        list_img = (extract_between(b.text, '"skuPropertyImagePath":"','"'))
-        list_id = (extract_between(b.text, '"propertyValueId":',','))
-        for i in list_id:
-            try:
-                a = b.text.split(f'"propertyValueIdLong":{i},"propertyValueDisplayName":"')[1].split('"')[0]
-                list_size.append(a)
-                list_id_size.append(i)
-            except: pass
-        dem_sku = 1
-        print(list_size)
-        print(list_id_size)
-        for i in list_id:
-            quantity = b.text.split(',"skuPropIds":"'+i)[0].split(',"availQuantity":')[-1].split(',')[0]
-            if int(quantity) >0:
-                if list_size == []:
-                    print(i)
+        elif detail.count('"skuPropertyValues":')==1:
+            b = detail.split('"skuPropertyValues":[')[1]
+            a = [i.replace('"','') for i in detail.split(f'"imagePathList":[')[1].split(']')[0].split(",")]
+            colors = extract_between(b,'"propertyValueDisplayName":"', '"')
+            list_img = [i.replace('"','') for i in detail.split(f'"imagePathList":[')[1].split(']')[0].split(",")]
+            url_img = extract_between(b,'"skuPropertyImagePath":"', '"')
+            dem_sku = 1
+            for color in colors:
+                next_row = ws.max_row + 1
+                ws['A' + str(next_row)] = prefix_input.get()
+                ws['B' + str(next_row)] = prefix_input.get()
+                ws['C' + str(next_row)] = prefix_input.get()
+                ws['D' + str(next_row)] = prefix_input.get()
+                ws['K' + str(next_row)] = name
+                ws['AA' + str(next_row)] = des
+                ws['H' + str(next_row)] = url
+                ws['M' + str(next_row)] = 50
+                ws['U' + str(next_row)] = "Child"
+                ws['W' + str(next_row)] = "Variation"
+                ws['X' + str(next_row)] = "Color"
+                ws['AJ' + str(next_row)] = "1"
+                ws['AK' + str(next_row)] = "Count"
+                ws['AN' + str(next_row)] = "10"
+                ws['J' + str(next_row)] = f"{prefix_input.get()}-{dem_sku}-{url.split('/')[-1].split('.html')[0]}"
+                ws['V' + str(next_row)] = f"{prefix_input.get()}-{url.split('/')[-1].split('.html')[0]}"
+
+                img_url_index = 0
+                for j in ["O", "P", "Q", "R", "S", "T"]:
+                    try:
+                        ws[j + str(next_row)] = list_img[img_url_index]
+                        img_url_index += 1
+                    except: break    
+                ws['N' + str(next_row)] = url_img[dem_sku-1]
+                price = "9.99"
+                ws['L' + str(next_row)] = str(price)
+                ws['AI' + str(next_row)] = f"{color} - {dem_sku}"
+                ws['AH' + str(next_row)] = f"{color} - {dem_sku}"
+                dem_sku += 1
+                wb.save(file_path_result)
+        elif detail.count('"skuPropertyValues":')==2:
+            b = detail.split('"skuPropertyValues":[')[1:]
+            a = [i.replace('"','') for i in detail.split(f'"imagePathList":[')[1].split(']')[0].split(",")]
+            colors = extract_between(b[0],'"propertyValueDisplayName":"', '"')
+            sizes = extract_between(b[1],'"propertyValueDisplayName":"', '"')
+            url_img = extract_between(b[0],'"skuPropertyImagePath":"', '"')
+            list_img = [i.replace('"','') for i in detail.split(f'"imagePathList":[')[1].split(']')[0].split(",")]
+            for color in colors:
+                dem_sku = 1
+                for size in sizes:
                     next_row = ws.max_row + 1
                     ws['A' + str(next_row)] = prefix_input.get()
                     ws['B' + str(next_row)] = prefix_input.get()
@@ -177,58 +203,29 @@ def crawl_product(url):
                             ws[j + str(next_row)] = list_img[img_url_index]
                             img_url_index += 1
                         except: break    
-                    a = b.text.split(f'"propertyValueId":{i},"skuPropertyImagePath":"')[1].split('"')[0]
-                    ws['N' + str(next_row)] = a
-                    price = "9.99$"
+                    ws['N' + str(next_row)] = url_img[dem_sku-1]
+                    price = "9.99"
                     ws['L' + str(next_row)] = str(price)
-                    color = b.text.split(f'"propertyValueId":{i}')[0].split('"skuPropertyTips":"')[-1].split('",')[0]
-                    ws['AI' + str(next_row)] = f"{color} - {dem_sku}"
-                    ws['AH' + str(next_row)] = f"{color} - {dem_sku}"
+                    ws['AI' + str(next_row)] = f"{color} - {size} - {dem_sku}"
+                    ws['AH' + str(next_row)] = f"{color} - {size} - {dem_sku}"
                     dem_sku += 1
                     wb.save(file_path_result)
-                else:
-                    if (i in list_id_size) == False:
-                        print(i)
-                        for j in list_size:
-                            next_row = ws.max_row + 1
-                            ws['A' + str(next_row)] = prefix_input.get()
-                            ws['B' + str(next_row)] = prefix_input.get()
-                            ws['C' + str(next_row)] = prefix_input.get()
-                            ws['D' + str(next_row)] = prefix_input.get()
-                            ws['K' + str(next_row)] = name
-                            ws['AA' + str(next_row)] = des
-                            ws['H' + str(next_row)] = url
-                            ws['M' + str(next_row)] = 50
-                            ws['U' + str(next_row)] = "Child"
-                            ws['W' + str(next_row)] = "Variation"
-                            ws['X' + str(next_row)] = "Color"
-                            ws['AJ' + str(next_row)] = "1"
-                            ws['AK' + str(next_row)] = "Count"
-                            ws['AN' + str(next_row)] = "10"
-                            ws['J' + str(next_row)] = f"{prefix_input.get()}-{dem_sku}-{url.split('/')[-1].split('.html')[0]}"
-                            ws['V' + str(next_row)] = f"{prefix_input.get()}-{url.split('/')[-1].split('.html')[0]}"
-
-                            img_url_index = 0
-                            for k in ["O", "P", "Q", "R", "S", "T"]:
-                                try:
-                                    ws[k + str(next_row)] = list_img[img_url_index]
-                                    img_url_index += 1
-                                except: break    
-                            a = b.text.split(f'"propertyValueId":{i},"skuPropertyImagePath":"')[1].split('"')[0]
-                            ws['N' + str(next_row)] = a
-                            ws['L' + str(next_row)] = '9.99$'
-                            color = b.text.split(f'"propertyValueId":{i}')[0].split('"skuPropertyTips":"')[-1].split('",')[0]
-                            ws['AI' + str(next_row)] = f"{color} - {j} - {dem_sku}"
-                            ws['AH' + str(next_row)] = f"{color} - {j} - {dem_sku}"
-                            dem_sku += 1
-                            wb.save(file_path_result)
     except Exception as e:
-        traceback.print_exc()
-        print(str(e))
-        try:
-            list_ck.remove(cookie)
-        except: pass
-        crawl_product(url)
+        def save_error_to_file(error_message):
+            with open("error_log.txt", 'a') as f:
+                f.write(error_message + '\n')
+        tb = e.__traceback__
+        error_message = f" {url}| Exception: {e} | "
+        while tb is not None:
+            filename = tb.tb_frame.f_code.co_filename
+            lineno = tb.tb_lineno
+            function_name = tb.tb_frame.f_code.co_name
+            error_message += f"File: {filename}, Line: {lineno}, in {function_name}\n"
+            tb = tb.tb_next
+        save_error_to_file(error_message)
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f"Error: {url}\n")
+        log_frame.configure(state="disabled")
 
 
 
