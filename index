@@ -17,6 +17,17 @@ def extract_between(text, sub1, sub2):
 logging.getLogger('seleniumwire').setLevel(logging.CRITICAL)
 logging.getLogger('selenium').setLevel(logging.CRITICAL)
 
+response = requests.get(
+    "https://proxy.webshare.io/api/v2/proxy/list/?mode=direct&page=1&page_size=25",
+    headers={"Authorization": "Token wcc6luoipd5ja0z0hvgex5p2c0agb8uw8vh8d82c"}
+    ).json()
+proxy_list = response['results']
+
+def get_random_proxy():
+    global proxy_list
+    p = random.choice(proxy_list)
+    return f'{p["username"]}:{p["password"]}@{p["proxy_address"]}:{p["port"]}'
+
 def get_detail(url):
 
     chrome_options = Options()
@@ -25,10 +36,14 @@ def get_detail(url):
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--no-sandbox')
+    p = get_random_proxy()
+    log_frame.configure(state="normal")
+    log_frame.insert("end", f"Set ip: {p.split("@")[1].split(":")[0]}\n")
+    log_frame.configure(state="disabled")
     options = {
         'proxy': {
-            'http': 'http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80',
-            'https': 'http://wwbtzhay-rotate:1ori0ld4vzi5@p.webshare.io:80',
+            'http': f'http://{p}',
+            'https': f'http://{p}',
             'no_proxy': 'localhost,127.0.0.1'
         }
     }
