@@ -257,10 +257,24 @@ def start():
     global file_path_result, font, fill, service
     try:
         service = Service(ChromeDriverManager().install())
+        chrome_options = Options()
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument('--log-level=3')
+        chrome_options.add_argument('--disable-logging')
+        chrome_options.add_argument('--disable-dev-shm-usage')
+        chrome_options.add_argument('--no-sandbox')
+        driver = webdriver.Chrome(service=service, options=chrome_options)
     except Exception as e:
         chrome_version = str(e).split("Current browser version is ")[1].split(".")[0]
         try:
             service = Service(ChromeDriverManager(driver_version=chrome_version).install())
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            chrome_options.add_argument('--log-level=3')
+            chrome_options.add_argument('--disable-logging')
+            chrome_options.add_argument('--disable-dev-shm-usage')
+            chrome_options.add_argument('--no-sandbox')
+            driver = webdriver.Chrome(service=service, options=chrome_options)
         except:
             log_frame.configure(state="normal")
             log_frame.insert("end", f"Error: Không tìm thấy driver phù hợp\n")
