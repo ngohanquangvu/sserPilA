@@ -78,7 +78,20 @@ def crawl_product(url):
     ws = wb.active
     try:
         while True:
-            detail = get_detail(url)
+            try:
+                detail = get_detail(url)
+            except Exception as e:
+                tb = e.__traceback__
+                error_message = f" {url}| Exception: {e} | "
+                while tb is not None:
+                    filename = tb.tb_frame.f_code.co_filename
+                    lineno = tb.tb_lineno
+                    function_name = tb.tb_frame.f_code.co_name
+                    error_message += f"File: {filename}, Line: {lineno}, in {function_name}\n"
+                    tb = tb.tb_next
+                with open("error_log.txt", 'a') as f:
+                    f.write(error_message + '\n')
+                pass
             if detail is not None:
                 break
         while True:
@@ -288,20 +301,21 @@ def check_service():
             log_frame.configure(state="normal")
             log_frame.insert("end", f"Error: Không tìm thấy driver phù hợp\n")
             log_frame.configure(state="disabled")
-            service = None
+            service = False
+def run_check_service():
+    threading.Thread(target=check_service).start()
+
 
 def start():
     global file_path_result, font, fill, service
     log_frame.configure(state="normal")
     log_frame.insert("end", f"Start running...\n")
     log_frame.configure(state="disabled")
-    t = threading.Thread(target=check_service)
-    t.start()
     if service is None:
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f"Please check driver\n")
+        log_frame.configure(state="disabled")
         return
-    log_frame.configure(state="normal")
-    log_frame.insert("end", f"Download driver success\n")
-    log_frame.configure(state="disabled")
     file_path_result = f'{prefix_input.get()}-{datetime.datetime.now().strftime("%H-%M-%S-%d-%m-%Y")}.xlsx'
     if not os.path.exists(file_path_result):
         wb = Workbook()
@@ -343,10 +357,12 @@ input_frame = customtkinter.CTkFrame(app, width=600, height=200)
 input_frame.grid(row=0, column=0)
 button_frame = customtkinter.CTkFrame(input_frame, width=270, height=200)
 button_frame.grid(row=0, column=0, padx=(10, 0), pady=10)
-start_button = customtkinter.CTkButton(button_frame, text="Start", command=start, width=270, height=130)
-start_button.grid(row=0, column=0, pady=(0,10))
+start_button = customtkinter.CTkButton(button_frame, text="Start", command=start, width=270, height=55)
+start_button.grid(row=0, column=0, pady=(0,0))
+service_button = customtkinter.CTkButton(button_frame, text="Check driver", command=run_check_service, width=270, height=55)
+service_button.grid(row=1, column=0, pady=(10,0))
 prefix_input = customtkinter.CTkEntry(button_frame, width=270, height=50, placeholder_text="Nhập prefix")
-prefix_input.grid(row=1, column=0, pady=(10,0))
+prefix_input.grid(row=2, column=0, pady=(10,0))
 url_input = customtkinter.CTkTextbox(input_frame, width=300, height=200)
 url_input.grid(row=0, column=1, padx=(5, 10), pady=10)
 
