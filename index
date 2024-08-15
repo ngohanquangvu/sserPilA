@@ -294,7 +294,6 @@ def start():
     global file_path_result, font, fill, service
     t = threading.Thread(target=check_service)
     t.start()
-    t.join()
     if service is None:
         return
     file_path_result = f'{prefix_input.get()}-{datetime.datetime.now().strftime("%H-%M-%S-%d-%m-%Y")}.xlsx'
