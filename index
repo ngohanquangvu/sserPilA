@@ -16,39 +16,37 @@ def extract_between(text, sub1, sub2):
 
 logging.getLogger('seleniumwire').setLevel(logging.CRITICAL)
 logging.getLogger('selenium').setLevel(logging.CRITICAL)
+def get_chrome_pids():
+    chrome_pids = []
+    result = os.popen('tasklist /FI "IMAGENAME eq chrome.exe"').read()
+    for line in result.splitlines():
+        if 'chrome.exe' in line:
+            parts = line.split()
+            pid = int(parts[1])
+            chrome_pids.append(pid)
+    return chrome_pids
 
-response = requests.get(
-    "https://proxy.webshare.io/api/v2/proxy/list/?mode=direct&page=1&page_size=25",
-    headers={"Authorization": "Token wcc6luoipd5ja0z0hvgex5p2c0agb8uw8vh8d82c"}
-    ).json()
-proxy_list = response['results']
+def kill_new_chrome_processes(old_pids):
+    current_pids = get_chrome_pids()
+    new_pids = set(current_pids) - set(old_pids)
+    for pid in new_pids:
+        try:
+            os.system(f'taskkill /PID {pid} /F >nul 2>&1')
+        except Exception as e:
+            print(f"Error killing process {pid}: {e}")
 
-def get_random_proxy():
-    global proxy_list
-    p = random.choice(proxy_list)
-    return f'{p["username"]}:{p["password"]}@{p["proxy_address"]}:{p["port"]}'
 
 def get_detail(url):
     global service
+    old_pids = get_chrome_pids()
     chrome_options = Options()
     chrome_options.add_argument("--headless")
     chrome_options.add_argument('--log-level=3')
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--no-sandbox')
-    p = get_random_proxy()
-    log_frame.configure(state="normal")
-    log_frame.insert("end", f"Set ip: {p.split("@")[1].split(":")[0]}\n")
-    log_frame.configure(state="disabled")
-    options = {
-        'proxy': {
-            'http': f'http://{p}',
-            'https': f'http://{p}',
-            'no_proxy': 'localhost,127.0.0.1'
-        }
-    }
 
-    driver = webdriver.Chrome(service=service, options=chrome_options, seleniumwire_options=options)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     driver.get(url)
     for request in driver.requests:
         if "/h5/mtop.aliexpress.pdp.pc.query/1.0/" in request.url:
@@ -61,14 +59,12 @@ def get_detail(url):
                 else:
                     response_body = response_body.decode('utf-8')
                 if '"ret":["SUCCESS' in response_body:
-                    os.system("taskkill /f /im chrome.exe")
-                    os.system("taskkill /f /im chromedriver.exe")
+                    kill_new_chrome_processes(old_pids)
 
                     driver.quit()
                     return response_body
     
-    os.system("taskkill /f /im chrome.exe")
-    os.system("taskkill /f /im chromedriver.exe")
+    kill_new_chrome_processes(old_pids)
     driver.quit()
     return None
 
@@ -80,6 +76,16 @@ def crawl_product(url):
         while True:
             try:
                 detail = get_detail(url)
+                if detail is not None:
+                    break
+                else:
+                    log_frame.configure(state="normal")
+                    log_frame.insert("end", f"Error: Vui lòng đổi ip, chạy lại sau 1p\n")
+                    log_frame.configure(state="disabled")
+                    time.sleep(60)
+                    log_frame.configure(state="normal")
+                    log_frame.insert("end", f"Retry: {url}\n")
+                    log_frame.configure(state="disabled")
             except Exception as e:
                 tb = e.__traceback__
                 error_message = f" {url}| Exception: {e} | "
@@ -92,8 +98,6 @@ def crawl_product(url):
                 with open("error_log.txt", 'a') as f:
                     f.write(error_message + '\n')
                 pass
-            if detail is not None:
-                break
         while True:
             try:
                 des = get_des(detail.split('pcDescUrl":"')[1].split('"')[0])[0]
@@ -301,16 +305,29 @@ def check_service():
             log_frame.configure(state="normal")
             log_frame.insert("end", f"Error: Không tìm thấy driver phù hợp\n")
             log_frame.configure(state="disabled")
-            service = False
+            service = None
 def run_check_service():
     global service
     threading.Thread(target=check_service).start()
-    if service != False:
+    if service != None:
         log_frame.configure(state="normal")
         log_frame.insert("end", f"Driver is available\n")
         log_frame.configure(state="disabled")
+    else:
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f"Driver is downloading, wait for 2-3 minutes to check again\n")
+        log_frame.configure(state="disabled")
 
+def open_folder(path):
+    os.system(f'start {os.path.realpath(path)}')
 
+def get_unique_filename(base_name, extension):
+    counter = 1
+    file_name = f"{base_name}{extension}"
+    while os.path.exists(file_name):
+        file_name = f"{base_name} ({counter}){extension}"
+        counter += 1
+    return file_name
 
 def start():
     global file_path_result, font, fill, service
@@ -322,7 +339,9 @@ def start():
         log_frame.insert("end", f"Please check driver\n")
         log_frame.configure(state="disabled")
         return
-    file_path_result = f'{prefix_input.get()}-{datetime.datetime.now().strftime("%H-%M-%S-%d-%m-%Y")}.xlsx'
+
+    file_path_result =  f'{prefix_input.get()}-Cao'
+    file_path_result = get_unique_filename(file_path_result, ".xlsx")
     if not os.path.exists(file_path_result):
         wb = Workbook()
         wb.save(file_path_result)
@@ -356,6 +375,7 @@ def start():
         log_frame.configure(state="normal")
         log_frame.insert("end", f"Crawling success\n")
         log_frame.configure(state="disabled")
+        open_folder(os.getcwd())    
     threading.Thread(target=run).start()
     
 
