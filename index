@@ -275,7 +275,17 @@ def start():
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--no-sandbox')
             driver = webdriver.Chrome(service=service, options=chrome_options)
-        except:
+        except Exception as e:
+            tb = e.__traceback__
+            error_message = f"Exception: {e} | "
+            while tb is not None:
+                filename = tb.tb_frame.f_code.co_filename
+                lineno = tb.tb_lineno
+                function_name = tb.tb_frame.f_code.co_name
+                error_message += f"File: {filename}, Line: {lineno}, in {function_name}\n"
+                tb = tb.tb_next
+            with open("error_log.txt", 'a') as f:
+                f.write(error_message + '\n')
             log_frame.configure(state="normal")
             log_frame.insert("end", f"Error: Không tìm thấy driver phù hợp\n")
             log_frame.configure(state="disabled")
