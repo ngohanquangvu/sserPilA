@@ -252,9 +252,8 @@ def crawl_product(url):
         log_frame.configure(state="disabled")
 
 service = None
-
-def start():
-    global file_path_result, font, fill, service
+def check_service():
+    global service
     try:
         service = Service(ChromeDriverManager().install())
         chrome_options = Options()
@@ -289,7 +288,15 @@ def start():
             log_frame.configure(state="normal")
             log_frame.insert("end", f"Error: Không tìm thấy driver phù hợp\n")
             log_frame.configure(state="disabled")
-            return
+            service = None
+
+def start():
+    global file_path_result, font, fill, service
+    t = threading.Thread(target=check_service)
+    t.start()
+    t.join()
+    if service is None:
+        return
     file_path_result = f'{prefix_input.get()}-{datetime.datetime.now().strftime("%H-%M-%S-%d-%m-%Y")}.xlsx'
     if not os.path.exists(file_path_result):
         wb = Workbook()
