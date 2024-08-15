@@ -264,7 +264,7 @@ def check_service():
         chrome_options.add_argument('--no-sandbox')
         driver = webdriver.Chrome(service=service, options=chrome_options)
     except Exception as e:
-        chrome_version = str(e).split("Current browser version is ")[1].split(" ")[0]
+        chrome_version = str(e).split("Current browser version is ")[1].split(".")[0]
         try:
             service = Service(ChromeDriverManager(driver_version=chrome_version).install())
             chrome_options = Options()
@@ -292,10 +292,16 @@ def check_service():
 
 def start():
     global file_path_result, font, fill, service
+    log_frame.configure(state="normal")
+    log_frame.insert("end", f"Start running...\n")
+    log_frame.configure(state="disabled")
     t = threading.Thread(target=check_service)
     t.start()
     if service is None:
         return
+    log_frame.configure(state="normal")
+    log_frame.insert("end", f"Download driver success\n")
+    log_frame.configure(state="disabled")
     file_path_result = f'{prefix_input.get()}-{datetime.datetime.now().strftime("%H-%M-%S-%d-%m-%Y")}.xlsx'
     if not os.path.exists(file_path_result):
         wb = Workbook()
