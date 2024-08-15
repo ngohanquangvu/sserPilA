@@ -264,7 +264,7 @@ def check_service():
         chrome_options.add_argument('--no-sandbox')
         driver = webdriver.Chrome(service=service, options=chrome_options)
     except Exception as e:
-        chrome_version = str(e).split("Current browser version is ")[1].split(".")[0]
+        chrome_version = str(e).split("Current browser version is ")[1].split(" ")[0]
         try:
             service = Service(ChromeDriverManager(driver_version=chrome_version).install())
             chrome_options = Options()
