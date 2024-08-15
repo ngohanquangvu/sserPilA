@@ -303,7 +303,13 @@ def check_service():
             log_frame.configure(state="disabled")
             service = False
 def run_check_service():
+    global service
     threading.Thread(target=check_service).start()
+    if service != False:
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f"Driver is available\n")
+        log_frame.configure(state="disabled")
+
 
 
 def start():
