@@ -45,8 +45,16 @@ def get_detail(url):
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--no-sandbox')
+    p = "nhqvu:nhqvu@s11.proxyxoay.net:8733"
+    options = {
+        'proxy': {
+            'http': f'http://{p}',
+            'https': f'http://{p}',
+            'no_proxy': 'localhost,127.0.0.1'
+        }
+    }
 
-    driver = webdriver.Chrome(service=service, options=chrome_options)
+    driver = webdriver.Chrome(service=service, options=chrome_options, seleniumwire_options=options)
     driver.get(url)
     for request in driver.requests:
         if "/h5/mtop.aliexpress.pdp.pc.query/1.0/" in request.url:
@@ -80,9 +88,14 @@ def crawl_product(url):
                     break
                 else:
                     log_frame.configure(state="normal")
-                    log_frame.insert("end", f"Error: Vui lòng đổi ip, chạy lại sau 1p\n")
+                    log_frame.insert("end", f"Error: Bị block, tiến hành đổi ip\n")
                     log_frame.configure(state="disabled")
-                    time.sleep(60)
+                    while True:
+                        a = requests.get("https://proxyxoay.net/api/rotating-proxy/change-key-ip/be5cd09c-b32c-4199-8c8f-18405487fb06").json()
+                        if a['status'] == 200:
+                            break
+                        elif a['status'] == 400:
+                            time.sleep(int(a["message"].split("Vui lòng chờ sau ")[1].split(" giây")[0]))
                     log_frame.configure(state="normal")
                     log_frame.insert("end", f"Retry: {url}\n")
                     log_frame.configure(state="disabled")
