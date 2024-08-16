@@ -138,7 +138,6 @@ def crawl_product(url):
 
         def extract_last_before_sub2(text, sub1, sub2):
             return text.split(sub2)[0].split(sub1)[-1]
-        print(detail.count('"skuPropertyValues":'))
         if detail.count('"skuPropertyValues":')==0:
             next_row = ws.max_row + 1
             ws['A' + str(next_row)] = prefix_input.get()
@@ -249,8 +248,8 @@ def crawl_product(url):
                     ws['L' + str(next_row)] = str(price)
                     ws['AI' + str(next_row)] = f"{color} - {size} - {dem_sku}"
                     ws['AH' + str(next_row)] = f"{color} - {size} - {dem_sku}"
-                    dem_sku += 1
                     wb.save(file_path_result)
+                dem_sku += 1
     except Exception as e:
         def save_error_to_file(error_message):
             with open("error_log.txt", 'a') as f:
@@ -271,6 +270,10 @@ def crawl_product(url):
 service = None
 def check_service():
     global service
+    if service is None:
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f"Driver is downloading, please wait...\n")
+        log_frame.configure(state="disabled")
     try:
         service = Service(ChromeDriverManager().install())
         chrome_options = Options()
@@ -280,6 +283,9 @@ def check_service():
         chrome_options.add_argument('--disable-dev-shm-usage')
         chrome_options.add_argument('--no-sandbox')
         driver = webdriver.Chrome(service=service, options=chrome_options)
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f"Driver is available\n")
+        log_frame.configure(state="disabled")
     except Exception as e:
         chrome_version = str(e).split("Current browser version is ")[1].split(" ")[0]
         try:
@@ -291,6 +297,9 @@ def check_service():
             chrome_options.add_argument('--disable-dev-shm-usage')
             chrome_options.add_argument('--no-sandbox')
             driver = webdriver.Chrome(service=service, options=chrome_options)
+            log_frame.configure(state="normal")
+            log_frame.insert("end", f"Driver is available\n")
+            log_frame.configure(state="disabled")
         except Exception as e:
             tb = e.__traceback__
             error_message = f"Exception: {e} | "
@@ -309,14 +318,6 @@ def check_service():
 def run_check_service():
     global service
     threading.Thread(target=check_service).start()
-    if service != None:
-        log_frame.configure(state="normal")
-        log_frame.insert("end", f"Driver is available\n")
-        log_frame.configure(state="disabled")
-    else:
-        log_frame.configure(state="normal")
-        log_frame.insert("end", f"Driver is downloading, wait for 2-3 minutes to check again\n")
-        log_frame.configure(state="disabled")
 
 def open_folder(path):
     os.system(f'start {os.path.realpath(path)}')
@@ -325,7 +326,7 @@ def get_unique_filename(base_name, extension):
     counter = 1
     file_name = f"{base_name}{extension}"
     while os.path.exists(file_name):
-        file_name = f"{base_name} ({counter}){extension}"
+        file_name = f"{base_name}({counter}){extension}"
         counter += 1
     return file_name
 
