@@ -391,14 +391,18 @@ def start():
         log_frame.configure(state="disabled")
         open_folder(os.getcwd())    
     threading.Thread(target=run).start()
-    
+
 
 input_frame = customtkinter.CTkFrame(app, width=600, height=200)
 input_frame.grid(row=0, column=0)
 button_frame = customtkinter.CTkFrame(input_frame, width=270, height=200)
 button_frame.grid(row=0, column=0, padx=(10, 0), pady=10)
-start_button = customtkinter.CTkButton(button_frame, text="Start", command=start, width=270, height=55)
+start_end_frame = customtkinter.CTkFrame(button_frame, width=270, height=55)
+start_end_frame.grid(row=0, column=0, pady=(0,0))
+start_button = customtkinter.CTkButton(start_end_frame, text="Start", command=start, width=135, height=55)
 start_button.grid(row=0, column=0, pady=(0,0))
+end_button = customtkinter.CTkButton(start_end_frame, text="End", command=app.quit, width=135, height=55)
+end_button.grid(row=0, column=1, pady=(0,0))
 service_button = customtkinter.CTkButton(button_frame, text="Check driver", command=run_check_service, width=270, height=55)
 service_button.grid(row=1, column=0, pady=(10,0))
 prefix_input = customtkinter.CTkEntry(button_frame, width=270, height=50, placeholder_text="Nhập prefix")
