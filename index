@@ -36,7 +36,7 @@ def kill_new_chrome_processes(old_pids):
             print(f"Error killing process {pid}: {e}")
 
 
-def get_detail(url):
+def get_detail(url, proxy):
     global service
     old_pids = get_chrome_pids()
     chrome_options = Options()
@@ -45,11 +45,10 @@ def get_detail(url):
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--no-sandbox')
-    p = "nhqvu:nhqvu@s11.proxyxoay.net:8733"
     options = {
         'proxy': {
-            'http': f'http://{p}',
-            'https': f'http://{p}',
+            'http': f'http://{proxy}',
+            'https': f'http://{proxy}',
             'no_proxy': 'localhost,127.0.0.1'
         }
     }
@@ -80,10 +79,21 @@ def crawl_product(url):
     global list_ck, file_path_result, font
     wb = openpyxl.load_workbook(file_path_result)
     ws = wb.active
+    p = requests.get(f"https://proxyxoay.net/api/rotating-proxy/key-status/{key_api_input.get()}").json()
+    if p['status'] == 400:
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f"Error: Key api hết hạn hoặc không hợp lệ\n")
+        log_frame.configure(state="disabled")
+        return
+    elif p['status'] == 200:
+        if p['data']['secure_proxy'] == "ipallow":
+            proxy = f"{p['data']['proxy_connection']['ip']}:{p['data']['proxy_connection']['http_ipv4']}"
+        else:
+            proxy = f"{p['data']['username']}:{p['data']['password']}@{p['data']['proxy_connection']['ip']}:{p['data']['proxy_connection']['http_ipv4']}"
     try:
         while True:
             try:
-                detail = get_detail(url)
+                detail = get_detail(url,proxy)
                 if detail is not None:
                     break
                 else:
@@ -407,8 +417,13 @@ service_button = customtkinter.CTkButton(button_frame, text="Check driver", comm
 service_button.grid(row=1, column=0, pady=(10,0))
 prefix_input = customtkinter.CTkEntry(button_frame, width=270, height=50, placeholder_text="Nhập prefix")
 prefix_input.grid(row=2, column=0, pady=(10,0))
-url_input = customtkinter.CTkTextbox(input_frame, width=300, height=200)
-url_input.grid(row=0, column=1, padx=(5, 10), pady=10)
+
+url_key_input_frame = customtkinter.CTkFrame(input_frame, width=300, height=200)
+url_key_input_frame.grid(row=0, column=1, padx=(5, 10), pady=10)
+url_input = customtkinter.CTkTextbox(url_key_input_frame, width=300, height=140)
+url_input.grid(row=0, column=1, padx=0, pady=0)
+key_api_input = customtkinter.CTkEntry(url_key_input_frame, width=300, height=40, placeholder_text="Nhập key api")
+key_api_input.grid(row=1, column=1, padx=0, pady=0)
 
 log_frame = customtkinter.CTkTextbox(app, width=600, height=200)
 log_frame.grid(row=1, column=0)
