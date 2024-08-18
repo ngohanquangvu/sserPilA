@@ -36,6 +36,22 @@ def kill_new_chrome_processes(old_pids):
             print(f"Error killing process {pid}: {e}")
 
 
+def convert_image(img):
+    data = requests.get(img)
+    extension = data.headers['Content-Type'].split("/")[1]
+    with open(f"convert.{extension}", "wb") as f:
+         f.write(data.content)
+    image_token = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzeXN0ZW1pZCI6Ind3dy5nYW5qaW5nLmNvbSIsInVzZXJpZCI6IjFndnYyZmxja2xmNlFDOVRYQmRLNmNDMkQxOWUwdSIsImNvbnRlbnRpZCI6IiIsInJvbGVzIjpbImNoYW5uZWxfbWFuYWdlciJdLCJpc3MiOiJ3d3cuZ2FuamluZy5jb20iLCJleHAiOjE3MjQwMDk4NDYsImlhdCI6MTcyNDAwMjY0Nn0.Y5wxkgPvJvN8IMHuTbiju-d6azTxtoDlBwT7ZMY2lTncNxG1V52gECnxXEB1VhUijUJyuf_4MDsm1f7oK8d0Kg"
+    b =  requests.post("https://imgapi.cloudokyo.cloud/api/v1/image", files={'file': (f"convert.{extension}", open(f"convert.{extension}", "rb"), 'image/png')}, headers={"Authorization":f"Bearer {image_token}"}).json()
+    img_list =b["body"]["image_url"]
+    def get_webp_url(media_list):
+                for url in media_list:
+                    if url.endswith('origin.jpg'):
+                        return url
+                return None
+    os.remove(f"convert.{extension}")
+    return get_webp_url(img_list)
+
 def get_detail(url, proxy):
     global service
     old_pids = get_chrome_pids()
@@ -45,10 +61,12 @@ def get_detail(url, proxy):
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--no-sandbox')
+    if proxy is not None:
+        proxy = f'http://{proxy}'
     options = {
         'proxy': {
-            'http': f'http://{proxy}',
-            'https': f'http://{proxy}',
+            'http': proxy,
+            'https': proxy,
             'no_proxy': 'localhost,127.0.0.1'
         }
     }
@@ -79,17 +97,21 @@ def crawl_product(url):
     global list_ck, file_path_result, font
     wb = openpyxl.load_workbook(file_path_result)
     ws = wb.active
-    p = requests.get(f"https://proxyxoay.net/api/rotating-proxy/key-status/{key_api_input.get()}").json()
-    if p['status'] == 400:
-        log_frame.configure(state="normal")
-        log_frame.insert("end", f"Error: Key api hết hạn hoặc không hợp lệ\n")
-        log_frame.configure(state="disabled")
-        return
-    elif p['status'] == 200:
-        if p['data']['secure_proxy'] == "ipallow":
-            proxy = f"{p['data']['proxy_connection']['ip']}:{p['data']['proxy_connection']['http_ipv4']}"
-        else:
-            proxy = f"{p['data']['username']}:{p['data']['password']}@{p['data']['proxy_connection']['ip']}:{p['data']['proxy_connection']['http_ipv4']}"
+    if key_api_input.get() == "":
+        proxy = None
+    else:
+        p = requests.get(f"https://proxyxoay.net/api/rotating-proxy/key-status/{key_api_input.get()}").json()
+        if p['status'] == 400:
+            log_frame.configure(state="normal")
+            log_frame.insert("end", f"Error: Key api hết hạn hoặc không hợp lệ\n")
+            log_frame.configure(state="disabled")
+            return
+        elif p['status'] == 200:
+            if p['data']['secure_proxy'] == "ipallow":
+                proxy = f"{p['data']['proxy_connection']['ip']}:{p['data']['proxy_connection']['http_ipv4']}"
+            else:
+                proxy = f"{p['data']['username']}:{p['data']['password']}@{p['data']['proxy_connection']['ip']}:{p['data']['proxy_connection']['http_ipv4']}"
+        print(proxy)
     try:
         while True:
             try:
@@ -97,15 +119,21 @@ def crawl_product(url):
                 if detail is not None:
                     break
                 else:
-                    log_frame.configure(state="normal")
-                    log_frame.insert("end", f"Error: Bị block, tiến hành đổi ip\n")
-                    log_frame.configure(state="disabled")
-                    while True:
-                        a = requests.get("https://proxyxoay.net/api/rotating-proxy/change-key-ip/be5cd09c-b32c-4199-8c8f-18405487fb06").json()
-                        if a['status'] == 200:
-                            break
-                        elif a['status'] == 400:
-                            time.sleep(int(a["message"].split("Vui lòng chờ sau ")[1].split(" giây")[0]))
+                    if key_api_input.get() != "":
+                        log_frame.configure(state="normal")
+                        log_frame.insert("end", f"Error: Bị block, tiến hành đổi ip\n")
+                        log_frame.configure(state="disabled")
+                        while True:
+                            a = requests.get("https://proxyxoay.net/api/rotating-proxy/change-key-ip/be5cd09c-b32c-4199-8c8f-18405487fb06").json()
+                            if a['status'] == 200:
+                                break
+                            elif a['status'] == 400:
+                                time.sleep(int(a["message"].split("Vui lòng chờ sau ")[1].split(" giây")[0]))
+                    else:
+                        log_frame.configure(state="normal")
+                        log_frame.insert("end", f"Error: Bị block, yêu cầu đổi ip, thử lại sau 1p\n")
+                        log_frame.configure(state="disabled")
+                        time.sleep(60)
                     log_frame.configure(state="normal")
                     log_frame.insert("end", f"Retry: {url}\n")
                     log_frame.configure(state="disabled")
@@ -180,11 +208,11 @@ def crawl_product(url):
             ws['J' + str(next_row)] = f"{prefix_input.get()}-1-{url.split('/')[-1].split('.html')[0]}"
             ws['V' + str(next_row)] = f"{prefix_input.get()}-{url.split('/')[-1].split('.html')[0]}"
             a = [i.replace('"','') for i in detail.split(f'"imagePathList":[')[1].split(']')[0].split(",")]
-            ws['N' + str(next_row)] = a[0]
+            ws['N' + str(next_row)] = convert_image(a[0])
             img_url_index = 0
             for j in ["O", "P", "Q", "R", "S", "T"]:
                 try:
-                    ws[j + str(next_row)] = a[img_url_index]
+                    ws[j + str(next_row)] = convert_image(a[img_url_index])
                     img_url_index += 1
                 except: break
             price = "9.99"
@@ -199,6 +227,10 @@ def crawl_product(url):
             colors = extract_between(b,'"propertyValueDisplayName":"', '"')
             list_img = [i.replace('"','') for i in detail.split(f'"imagePathList":[')[1].split(']')[0].split(",")]
             url_img = extract_between(b,'"skuPropertyImagePath":"', '"')
+            for i in list_img:
+                list_img[list_img.index(i)] = convert_image(i)
+            for i in url_img:
+                url_img[url_img.index(i)] = convert_image(i)
             dem_sku = 1
             for color in colors:
                 next_row = ws.max_row + 1
@@ -239,6 +271,10 @@ def crawl_product(url):
             sizes = extract_between(b[1],'"propertyValueDisplayName":"', '"')
             url_img = extract_between(b[0],'"skuPropertyImagePath":"', '"')
             list_img = [i.replace('"','') for i in detail.split(f'"imagePathList":[')[1].split(']')[0].split(",")]
+            for i in list_img:
+                list_img[list_img.index(i)] = convert_image(i)
+            for i in url_img:
+                url_img[url_img.index(i)] = convert_image(i)
             for color in colors:
                 dem_sku = 1
                 for size in sizes:
