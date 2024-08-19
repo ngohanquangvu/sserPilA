@@ -36,21 +36,119 @@ def kill_new_chrome_processes(old_pids):
             print(f"Error killing process {pid}: {e}")
 
 
+def get_token():
+    email = "uploadimage@vjuum.com"
+    password = "Vu@12112005"
+    while True:
+        try:
+            token_login = ""
+            d = {"user_email":email,"client_type":3}
+
+            h = {
+                'Authorization':token_login,
+                'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+                'X-Cdk-Dsid':'1b9be33b-2263-79b6-7da2-6fb5f24efc55',    
+                'X-Cdk-Lrtm':'2024-03-15 20:57:36',
+                'Accept':'application/json, text/plain, */*',
+                'Accept-Encoding':'gzip, deflate, br',
+                'Accept-Language':'vi,en-US;q=0.9,en;q=0.8',
+                'Content-Length':'56',
+                'Origin':'https://www.ganjingworld.com',
+                'Referer':'https://www.ganjingworld.com/',
+                'Sec-Ch-Ua':'"Chromium";v="122", "Not(A:Brand";v="24", "Microsoft Edge";v="122"',
+                'Sec-Ch-Ua-Mobile':'?0',
+                'Sec-Ch-Ua-Platform':'"Windows"',
+            }
+            pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
+            p = {
+                "http":f"http://{pr}",
+                "https":f"http://{pr}"
+            }
+            a = requests.post("https://gw.ganjingworld.com/v1.0c/signinpw", headers=h, json=d, proxies=p)
+            b = a.json()
+            break
+        except Exception as e: 
+            continue
+    server_salt = a.json()["data"]["server_salt"]
+    client_salt = a.json()["data"]["client_salt"]
+    def hash_password(pss, client_salt, server_salt):
+        x = hashlib.sha256((pss + client_salt).encode()).digest()
+        x_base64 = base64.b64encode(x).decode()
+        S = hashlib.sha256((x_base64 + server_salt).encode()).digest()
+        S_base64 = base64.b64encode(S).decode()
+        return S_base64
+
+    hashed_password = hash_password(password, client_salt, server_salt)
+
+    d = {"user_email":email,"password_hash":hashed_password,"client_type":3}
+
+    h = {
+        'Authorization':token_login,
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 Edg/122.0.0.0',
+        'X-Cdk-Dsid':'1b9be33b-2263-79b6-7da2-6fb5f24efc55',    
+        'X-Cdk-Lrtm':'2024-03-15 20:57:36',
+        'Accept':'application/json, text/plain, */*',
+        'Accept-Encoding':'gzip, deflate, br',
+        'Accept-Language':'vi,en-US;q=0.9,en;q=0.8',
+        'Content-Length':'56',
+        'Origin':'https://www.ganjingworld.com',
+        'Referer':'https://www.ganjingworld.com/',
+        'Sec-Ch-Ua':'"Chromium";v="122", "Not(A:Brand";v="24", "Microsoft Edge";v="122"',
+        'Sec-Ch-Ua-Mobile':'?0',
+        'Sec-Ch-Ua-Platform':'"Windows"',
+    }
+    while True:
+        try:
+            pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
+            p = {
+                "http":f"http://{pr}",
+                "https":f"http://{pr}"
+            }
+            a = requests.post("https://gw.ganjingworld.com/v1.0c/signinpw", headers=h, json=d, proxies=p)
+            access_token = a.json()["data"]["token"]
+            break
+        except Exception as e: 
+            pass
+    while True:
+        try:
+            h = {
+                "Authorization":access_token,
+                'Accept':'application/json, text/plain, */*',
+                'Accept-Encoding':'gzip, deflate, br',
+            }
+            pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
+            p = {
+                "http":f"http://{pr}",
+                "https":f"http://{pr}"
+            }
+            a = requests.get("https://gw.ganjingworld.com/v1.0c/get-vod-token?", headers=h, json=d, proxies=p)
+            access_token = a.json()["data"]["token"]
+            return access_token
+        except Exception as e:
+            pass
+
+image_token = ""
+
 def convert_image(img):
+    global image_token
     data = requests.get(img)
     extension = data.headers['Content-Type'].split("/")[1]
     with open(f"convert.{extension}", "wb") as f:
          f.write(data.content)
-    image_token = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzeXN0ZW1pZCI6Ind3dy5nYW5qaW5nLmNvbSIsInVzZXJpZCI6IjFndnYyZmxja2xmNlFDOVRYQmRLNmNDMkQxOWUwdSIsImNvbnRlbnRpZCI6IiIsInJvbGVzIjpbImNoYW5uZWxfbWFuYWdlciJdLCJpc3MiOiJ3d3cuZ2FuamluZy5jb20iLCJleHAiOjE3MjQwMDk4NDYsImlhdCI6MTcyNDAwMjY0Nn0.Y5wxkgPvJvN8IMHuTbiju-d6azTxtoDlBwT7ZMY2lTncNxG1V52gECnxXEB1VhUijUJyuf_4MDsm1f7oK8d0Kg"
-    b =  requests.post("https://imgapi.cloudokyo.cloud/api/v1/image", files={'file': (f"convert.{extension}", open(f"convert.{extension}", "rb"), 'image/png')}, headers={"Authorization":f"Bearer {image_token}"}).json()
-    img_list =b["body"]["image_url"]
-    def get_webp_url(media_list):
-                for url in media_list:
-                    if url.endswith('origin.jpg'):
-                        return url
-                return None
-    os.remove(f"convert.{extension}")
-    return get_webp_url(img_list)
+    while True:
+        try:
+            b =  requests.post("https://imgapi.cloudokyo.cloud/api/v1/image", files={'file': (f"convert.{extension}", open(f"convert.{extension}", "rb"), 'image/png')}, headers={"Authorization":f"Bearer {image_token}"}).json()
+            img_list =b["body"]["image_url"]
+            def get_webp_url(media_list):
+                        for url in media_list:
+                            if url.endswith('origin.jpg'):
+                                return url
+                        return None
+            os.remove(f"convert.{extension}")
+            return get_webp_url(img_list)
+        except:
+            image_token = get_token()
+            continue
 
 def get_detail(url, proxy):
     global service
@@ -328,11 +426,13 @@ def crawl_product(url):
 
 service = None
 def check_service():
-    global service
+    global service, image_token
     if service is None:
         log_frame.configure(state="normal")
         log_frame.insert("end", f"Driver is downloading, please wait...\n")
         log_frame.configure(state="disabled")
+    if image_token == "":
+        image_token = get_token()
     try:
         service = Service(ChromeDriverManager().install())
         chrome_options = Options()
