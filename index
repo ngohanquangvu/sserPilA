@@ -542,7 +542,7 @@ url_key_input_frame = customtkinter.CTkFrame(input_frame, width=300, height=200)
 url_key_input_frame.grid(row=0, column=1, padx=(5, 10), pady=10)
 url_input = customtkinter.CTkTextbox(url_key_input_frame, width=300, height=140)
 url_input.grid(row=0, column=1, padx=0, pady=0)
-key_api_input = customtkinter.CTkEntry(url_key_input_frame, width=300, height=40, placeholder_text="Nhập key api")
+key_api_input = customtkinter.CTkEntry(url_key_input_frame, width=300, height=40, placeholder_text="Nhập proxy dạng: user:pass@ip:port")
 key_api_input.grid(row=1, column=1, padx=0, pady=0)
 
 log_frame = customtkinter.CTkTextbox(app, width=600, height=200)
