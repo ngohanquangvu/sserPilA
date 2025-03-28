@@ -198,17 +198,6 @@ def crawl_product(url):
     if key_api_input.get() == "":
         proxy = None
     else:
-        p = requests.get(f"https://proxyxoay.net/api/rotating-proxy/key-status/{key_api_input.get()}").json()
-        if p['status'] == 400:
-            log_frame.configure(state="normal")
-            log_frame.insert("end", f"Error: Key api hết hạn hoặc không hợp lệ\n")
-            log_frame.configure(state="disabled")
-            return
-        elif p['status'] == 200:
-            if p['data']['secure_proxy'] == "ipallow":
-                proxy = f"{p['data']['proxy_connection']['ip']}:{p['data']['proxy_connection']['http_ipv4']}"
-            else:
-                proxy = f"{p['data']['username']}:{p['data']['password']}@{p['data']['proxy_connection']['ip']}:{p['data']['proxy_connection']['http_ipv4']}"
         print(proxy)
     try:
         while True:
@@ -221,12 +210,7 @@ def crawl_product(url):
                         log_frame.configure(state="normal")
                         log_frame.insert("end", f"Error: Bị block, tiến hành đổi ip\n")
                         log_frame.configure(state="disabled")
-                        while True:
-                            a = requests.get("https://proxyxoay.net/api/rotating-proxy/change-key-ip/be5cd09c-b32c-4199-8c8f-18405487fb06").json()
-                            if a['status'] == 200:
-                                break
-                            elif a['status'] == 400:
-                                time.sleep(int(a["message"].split("Vui lòng chờ sau ")[1].split(" giây")[0]))
+                        
                     else:
                         log_frame.configure(state="normal")
                         log_frame.insert("end", f"Error: Bị block, yêu cầu đổi ip, thử lại sau 1p\n")
