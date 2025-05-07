@@ -149,7 +149,7 @@ def convert_image(img):
         except:
             image_token = get_token()
             continue
-
+d = 0
 def get_detail(url, proxy):
     global service
     old_pids = get_chrome_pids()
@@ -158,6 +158,7 @@ def get_detail(url, proxy):
     chrome_options.add_argument('--disable-logging')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--headless')
     if proxy is not None:
         proxy = f'http://{proxy}'
     options = {
@@ -185,6 +186,9 @@ def get_detail(url, proxy):
                     kill_new_chrome_processes(old_pids)
 
                     driver.quit()
+                    if d==0:
+                        open("response.txt", "wb").write(response_body)
+                        d=1
                     return response_body
     
     kill_new_chrome_processes(old_pids)
@@ -211,6 +215,7 @@ def crawl_product(url):
                         log_frame.configure(state="normal")
                         log_frame.insert("end", f"Error: Bị block, tiến hành đổi ip\n")
                         log_frame.configure(state="disabled")
+                        time.sleep(30)
                         
                     else:
                         log_frame.configure(state="normal")
