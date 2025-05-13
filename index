@@ -69,6 +69,7 @@ def get_token():
             b = a.json()
             break
         except Exception as e: 
+            print(f"Error: {str(e)}")
             continue
     server_salt = a.json()["data"]["server_salt"]
     client_salt = a.json()["data"]["client_salt"]
@@ -110,6 +111,7 @@ def get_token():
             access_token = a.json()["data"]["token"]
             break
         except Exception as e: 
+            print(f"Error: {str(e)}")
             pass
     while True:
         try:
@@ -128,6 +130,7 @@ def get_token():
             access_token = a.json()["data"]["token"]
             return access_token
         except Exception as e:
+            print(f"Error: {str(e)}")
             pass
 
 image_token = ""
@@ -426,8 +429,14 @@ def check_service():
         log_frame.configure(state="disabled")
     if image_token == "":
         image_token = get_token()
+    log_frame.configure(state="normal")
+    log_frame.insert("end", f"Token is available\n")
+    log_frame.configure(state="disabled")
     try:
         service = Service(ChromeDriverManager().install())
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f"Driver is downloading\n")
+        log_frame.configure(state="disabled")
         chrome_options = Options()
         chrome_options.add_argument("--headless")
         chrome_options.add_argument('--log-level=3')
