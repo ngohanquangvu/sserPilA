@@ -427,18 +427,14 @@ def check_service():
         log_frame.configure(state="normal")
         log_frame.insert("end", f"Driver is downloading, please wait...\n")
         log_frame.configure(state="disabled")
-    if image_token == "":
-        image_token = get_token()
+    # if image_token == "":
+    #     image_token = get_token()
     log_frame.configure(state="normal")
     log_frame.insert("end", f"Token is available\n")
     log_frame.configure(state="disabled")
     try:
         service = Service(ChromeDriverManager().install())
-        log_frame.configure(state="normal")
-        log_frame.insert("end", f"Driver is downloading\n")
-        log_frame.configure(state="disabled")
         chrome_options = Options()
-        chrome_options.add_argument("--headless")
         chrome_options.add_argument('--log-level=3')
         chrome_options.add_argument('--disable-logging')
         chrome_options.add_argument('--disable-dev-shm-usage')
@@ -449,6 +445,9 @@ def check_service():
         log_frame.configure(state="disabled")
     except Exception as e:
         chrome_version = str(e).split("Current browser version is ")[1].split(" ")[0]
+        log_frame.configure(state="normal")
+        log_frame.insert("end", f" Downloading driver version: {chrome_version}\n")
+        log_frame.configure(state="disabled")
         try:
             service = Service(ChromeDriverManager(driver_version=chrome_version).install())
             chrome_options = Options()
