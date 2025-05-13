@@ -59,11 +59,12 @@ def get_token():
                 'Sec-Ch-Ua-Mobile':'?0',
                 'Sec-Ch-Ua-Platform':'"Windows"',
             }
-            pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
-            p = {
-                "http":f"http://{pr}",
-                "https":f"http://{pr}"
-            }
+            # pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
+            # p = {
+            #     "http":f"http://{pr}",
+            #     "https":f"http://{pr}"
+            # }
+            p = None
             a = requests.post("https://gw.ganjingworld.com/v1.0c/signinpw", headers=h, json=d, proxies=p)
             b = a.json()
             break
@@ -99,11 +100,12 @@ def get_token():
     }
     while True:
         try:
-            pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
-            p = {
-                "http":f"http://{pr}",
-                "https":f"http://{pr}"
-            }
+            # pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
+            # p = {
+            #     "http":f"http://{pr}",
+            #     "https":f"http://{pr}"
+            # }
+            p = None
             a = requests.post("https://gw.ganjingworld.com/v1.0c/signinpw", headers=h, json=d, proxies=p)
             access_token = a.json()["data"]["token"]
             break
@@ -116,11 +118,12 @@ def get_token():
                 'Accept':'application/json, text/plain, */*',
                 'Accept-Encoding':'gzip, deflate, br',
             }
-            pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
-            p = {
-                "http":f"http://{pr}",
-                "https":f"http://{pr}"
-            }
+            # pr = "0JeLKc:G69qYC@hub-us-8.litport.net:31682"
+            # p = {
+            #     "http":f"http://{pr}",
+            #     "https":f"http://{pr}"
+            # }
+            p = None
             a = requests.get("https://gw.ganjingworld.com/v1.0c/get-vod-token?", headers=h, json=d, proxies=p)
             access_token = a.json()["data"]["token"]
             return access_token
