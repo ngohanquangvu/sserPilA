@@ -435,6 +435,7 @@ def check_service():
     try:
         service = Service(ChromeDriverManager().install())
         chrome_options = Options()
+        chrome_options.add_argument('--disable-gpu')
         chrome_options.add_argument('--log-level=3')
         chrome_options.add_argument('--disable-logging')
         chrome_options.add_argument('--disable-dev-shm-usage')
