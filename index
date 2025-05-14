@@ -427,8 +427,8 @@ def check_service():
         log_frame.configure(state="normal")
         log_frame.insert("end", f"Driver is downloading, please wait...\n")
         log_frame.configure(state="disabled")
-    # if image_token == "":
-    #     image_token = get_token()
+    if image_token == "":
+        image_token = get_token()
     log_frame.configure(state="normal")
     log_frame.insert("end", f"Token is available\n")
     log_frame.configure(state="disabled")
@@ -436,6 +436,7 @@ def check_service():
         service = Service(ChromeDriverManager().install())
         chrome_options = Options()
         chrome_options.add_argument('--disable-gpu')
+        chrome_options.add_argument('--headless')
         chrome_options.add_argument('--log-level=3')
         chrome_options.add_argument('--disable-logging')
         chrome_options.add_argument('--disable-dev-shm-usage')
