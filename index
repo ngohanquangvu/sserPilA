@@ -155,7 +155,6 @@ def convert_image(img):
         except:
             image_token = get_token()
             continue
-d = 0
 def get_detail(url, proxy):
     global service
     old_pids = get_chrome_pids()
@@ -192,9 +191,6 @@ def get_detail(url, proxy):
                     kill_new_chrome_processes(old_pids)
 
                     driver.quit()
-                    if d==0:
-                        open("response.txt", "wb").write(response_body)
-                        d=1
                     return response_body
     
     kill_new_chrome_processes(old_pids)
